@@ -208,7 +208,7 @@ def get_leads():
         query += " AND status = ?"
         params.append(status)
 
-    query += " ORDER BY created_at DESC"
+    query += " ORDER BY created_at ASC"
 
     with get_db() as conn:
         rows = conn.execute(query, params).fetchall()

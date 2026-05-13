@@ -83,6 +83,7 @@
       border: 2px solid var(--border);
       border-radius: 12px;
       padding: 1.1rem 1.25rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
     }
     .stat-label {
       font-size: 0.78rem;
@@ -178,6 +179,7 @@
       border: 2px solid var(--border);
       border-radius: 12px;
       overflow-x: auto;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
     }
     table {
       width: 100%;
@@ -425,9 +427,9 @@
       return;
     }
 
-    tbody.innerHTML = leads.map(lead => `
+    tbody.innerHTML = leads.map((lead, index) => `
       <tr>
-        <td style="color:var(--muted); font-size:0.8rem;">${lead.id}</td>
+        <td style="color:var(--muted); font-size:0.8rem;">${index + 1}</td>
         <td>
           <div class="lead-name">${escHtml(lead.name)}</div>
           <div class="lead-email">${escHtml(lead.email)}</div>
