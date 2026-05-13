@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LeadFlow — Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f0;
+      --card:     #ffffff;
+      --accent:   #1a1a2e;
+      --border:   #e0ddd6;
+      --muted:    #6b6860;
+      --text:     #1a1a1a;
+      --green:    #2d6a4f;
+      --green-lt: #d8f3dc;
+      --amber:    #b45309;
+      --amber-lt: #fef3c7;
+      --red:      #c1121f;
+      --red-lt:   #ffe5e5;
+      --blue:     #1d4ed8;
+      --blue-lt:  #dbeafe;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Top nav ── */
+    nav {
+      background: var(--accent);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      color: #fff;
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+    }
+    .nav-link {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: #fff; }
+
+    /* ── Page wrapper ── */
+    .page { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .page-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.8rem;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+    .page-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1.75rem;
+    }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+    }
+    .stat-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-card.total  .stat-value { color: var(--accent); }
+    .stat-card.new    .stat-value { color: var(--blue); }
+    .stat-card.contacted .stat-value { color: var(--amber); }
+    .stat-card.closed .stat-value { color: var(--green); }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 9px 14px 9px 38px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      background: var(--card);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .filter-btns { display: flex; gap: 6px; }
+    .filter-btn {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .refresh-btn {
+      padding: 9px 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    thead {
+      background: #f9f8f5;
+      border-bottom: 2px solid var(--border);
+    }
+    th {
+      padding: 11px 16px;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    td {
+      padding: 13px 16px;
+      border-bottom: 2px solid #f0ede8;
+      vertical-align: middle;
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #faf9f6; }
+
+    .lead-name  { font-weight: 600; }
+    .lead-email { color: var(--muted); font-size: 0.82rem; }
+
+    /* Status badge */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-new       { background: var(--blue-lt);  color: var(--blue); }
+    .badge-contacted { background: var(--amber-lt); color: var(--amber); }
+    .badge-closed    { background: var(--green-lt); color: var(--green); }
+
+    /* Status dropdown */
+    .status-select {
+      padding: 5px 10px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .status-select:focus { border-color: var(--accent); }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty p { font-size: 0.95rem; }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 2.5rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.success { background: var(--green); color: #fff; }
+    .toast.fail    { background: var(--red);   color: #fff; }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+
+    /* Auto-refresh indicator */
+    .refresh-info {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 1rem;
+      text-align: right;
+    }
+
+    @media (max-width: 700px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .controls { flex-direction: column; align-items: stretch; }
+      th:nth-child(3), td:nth-child(3),
+      th:nth-child(4), td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">LeadFlow</span>
+  <a class="nav-link" href="/">+ Submit a Lead</a>
+</nav>
+
+<div class="page">
+  <h1 class="page-title">Admin Dashboard</h1>
+  <p class="page-sub">Manage and track all incoming leads.</p>
+
+  <!-- Stats bar -->
+  <div class="stats">
+    <div class="stat-card total">
+      <div class="stat-label">Total Leads</div>
+      <div class="stat-value" id="stat-total">—</div>
+    </div>
+    <div class="stat-card new">
+      <div class="stat-label">New</div>
+      <div class="stat-value" id="stat-new">—</div>
+    </div>
+    <div class="stat-card contacted">
+      <div class="stat-label">Contacted</div>
+      <div class="stat-value" id="stat-contacted">—</div>
+    </div>
+    <div class="stat-card closed">
+      <div class="stat-label">Closed</div>
+      <div class="stat-value" id="stat-closed">—</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search by name, email, phone, business…" />
+    </div>
+    <div class="filter-btns">
+      <button class="filter-btn active" data-status="All">All</button>
+      <button class="filter-btn" data-status="New">New</button>
+      <button class="filter-btn" data-status="Contacted">Contacted</button>
+      <button class="filter-btn" data-status="Closed">Closed</button>
+    </div>
+    <button class="refresh-btn" id="refreshBtn">↻ Refresh</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Lead</th>
+          <th>Phone</th>
+          <th>Business Type</th>
+          <th>Message</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="leadsBody">
+        <tr><td colspan="7"><div class="loading">Loading leads…</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="refresh-info" id="refreshInfo"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let currentStatus = 'All';
+  let searchTimer   = null;
+
+  // ── Toast ─────────────────────────────────────────────
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Load stats ────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const res  = await fetch('/api/stats');
+      const data = await res.json();
+      document.getElementById('stat-total').textContent     = data.Total     ?? 0;
+      document.getElementById('stat-new').textContent       = data.New       ?? 0;
+      document.getElementById('stat-contacted').textContent = data.Contacted ?? 0;
+      document.getElementById('stat-closed').textContent    = data.Closed    ?? 0;
+    } catch (e) {
+      console.error('Stats error:', e);
+    }
+  }
+
+  // ── Load leads ────────────────────────────────────────
+  async function loadLeads() {
+    const search = document.getElementById('searchInput').value.trim();
+    const params = new URLSearchParams();
+    if (search)                    params.set('search', search);
+    if (currentStatus !== 'All')   params.set('status', currentStatus);
+
+    const tbody = document.getElementById('leadsBody');
+    tbody.innerHTML = '<tr><td colspan="8"><div class="loading">Loading…</div></td></tr>';
+
+    try {
+      const res   = await fetch('/api/leads?' + params.toString());
+      const leads = await res.json();
+      renderLeads(leads);
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-icon">⚠️</div><p>Failed to load leads. Is the server running?</p></div></td></tr>';
+    }
+
+    // Update refresh timestamp
+    const now = new Date();
+    document.getElementById('refreshInfo').textContent =
+      `Last refreshed: ${now.toLocaleTimeString()}  •  Auto-refreshes every 30s`;
+  }
+
+  // ── Render table rows ─────────────────────────────────
+  function renderLeads(leads) {
+    const tbody = document.getElementById('leadsBody');
+
+    if (leads.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="8">
+          <div class="empty">
+            <div class="empty-icon">📭</div>
+            <p>No leads found.</p>
+          </div>
+        </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = leads.map(lead => `
+      <tr>
+        <td style="color:var(--muted); font-size:0.8rem;">${lead.id}</td>
+        <td>
+          <div class="lead-name">${escHtml(lead.name)}</div>
+          <div class="lead-email">${escHtml(lead.email)}</div>
+        </td>
+        <td>${escHtml(lead.phone)}</td>
+        <td>${escHtml(lead.business_type)}</td>
+        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(lead.message)}">
+          ${escHtml(lead.message)}
+        </td>
+        <td style="white-space:nowrap; color:var(--muted); font-size:0.82rem;">${formatDate(lead.created_at)}</td>
+        <td>
+          <select class="status-select" data-id="${lead.id}" onchange="updateStatus(this)">
+            <option ${lead.status === 'New'        ? 'selected' : ''}>New</option>
+            <option ${lead.status === 'Contacted'  ? 'selected' : ''}>Contacted</option>
+            <option ${lead.status === 'Closed'     ? 'selected' : ''}>Closed</option>
+          </select>
+        </td>
+        <td style="white-space:nowrap; padding-right:10px;">
+          <div style="display:flex; gap:16px; align-items:center;">
+            <button onclick="deleteLead(${lead.id}, this)" style="background:none; border:2px solid #e0ddd6; border-radius:6px; padding:7px 14px; cursor:pointer; color:#c1121f; font-size:0.82rem; font-weight:600; transition:all 0.2s; white-space:nowrap; line-height:1; height:34px; box-sizing:border-box;" onmouseover="this.style.background='#ffe5e5'" onmouseout="this.style.background='none'">Delete</button>
+            <button onclick="openReplyModal(${lead.id})" style="background:none; border:2px solid #c7d2fe; border-radius:6px; padding:7px 14px; cursor:pointer; color:#4338ca; font-size:0.82rem; font-weight:600; transition:all 0.2s; white-space:nowrap; line-height:1; height:34px; box-sizing:border-box;" onmouseover="this.style.background='#eef2ff'" onmouseout="this.style.background='none'">✨ AI Reply</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Update lead status ────────────────────────────────
+  async function updateStatus(select) {
+    const id     = select.dataset.id;
+    const status = select.value;
+
+    try {
+      const res = await fetch(`/api/leads/${id}/status`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ status }),
+      });
+
+      if (res.ok) {
+        showToast(`Status updated to "${status}"`, 'success');
+        loadStats();
+      } else {
+        showToast('Failed to update status.', 'fail');
+      }
+    } catch (e) {
+      showToast('Network error.', 'fail');
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatDate(dt) {
+    if (!dt) return '—';
+    const d = new Date(dt.replace(' ', 'T'));
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })
+      + ' ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ── Filter buttons ────────────────────────────────────
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentStatus = btn.dataset.status;
+      loadLeads();
+    });
+  });
+
+  // ── Search (debounced) ────────────────────────────────
+  document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadLeads, 350);
+  });
+
+  // ── Manual refresh ────────────────────────────────────
+  document.getElementById('refreshBtn').addEventListener('click', () => {
+    loadStats();
+    loadLeads();
+  });
+
+  // ── Auto-refresh every 30 seconds ────────────────────
+  setInterval(() => {
+    loadStats();
+    loadLeads();
+  }, 30000);
+
+  // ── Initial load ──────────────────────────────────────
+  loadStats();
+  loadLeads();
+
+  async function deleteLead(id, btn) {
+    if (!confirm('Delete this lead? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('Lead deleted.', 'success');
+        loadStats();
+        loadLeads();
+      } else {
+        showToast('Failed to delete.', 'fail');
+      }
+    } catch (e) {
+      showToast('Network error.', 'fail');
+    }
+  }
+</script>
+<!-- ── AI Reply Modal ─────────────────────────────────── -->
+<div id="replyModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; padding:1rem;">
+  <div style="background:#fff; border-radius:16px; width:100%; max-width:580px; box-shadow:0 24px 60px rgba(0,0,0,0.18); overflow:hidden; animation:fadeUp 0.25s ease both;">
+
+    <!-- Modal header -->
+    <div style="background:#1a1a2e; padding:1.1rem 1.5rem; display:flex; align-items:center; justify-content:space-between;">
+      <div>
+        <div style="font-family:'DM Serif Display',serif; color:#fff; font-size:1.1rem;">✨ AI Reply Draft</div>
+        <div id="modalMeta" style="font-size:0.78rem; color:rgba(255,255,255,0.55); margin-top:2px;"></div>
+      </div>
+      <button onclick="closeReplyModal()" style="background:none; border:none; color:rgba(255,255,255,0.6); font-size:1.4rem; cursor:pointer; line-height:1; padding:4px;">×</button>
+    </div>
+
+    <!-- Source badge -->
+    <div style="padding:0.75rem 1.5rem 0;">
+      <span id="sourceBadge" style="display:inline-block; font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:20px; letter-spacing:0.4px;"></span>
+    </div>
+
+    <!-- Loading state -->
+    <div id="replyLoading" style="padding:2.5rem; text-align:center; color:#6b6860; font-size:0.9rem;">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">⚙️</div>
+      Generating reply…
+    </div>
+
+    <!-- Reply textarea -->
+    <div id="replyContent" style="display:none; padding:1rem 1.5rem 0;">
+      <label style="font-size:0.78rem; font-weight:600; color:#6b6860; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:6px;">Reply Draft — edit before sending</label>
+      <textarea id="replyText" rows="10" style="width:100%; padding:12px 14px; border:2px solid #e0ddd6; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.9rem; line-height:1.65; color:#1a1a1a; resize:vertical; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#1a1a2e'" onblur="this.style.borderColor='#e0ddd6'"></textarea>
+    </div>
+
+    <!-- Actions -->
+    <div id="replyActions" style="display:none; padding:1rem 1.5rem 1.5rem; display:none; gap:0.75rem; justify-content:flex-end; flex-wrap:wrap;">
+      <button onclick="regenerateReply()" id="regenBtn" style="padding:9px 18px; border:2px solid #e0ddd6; border-radius:8px; background:#fff; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; color:#6b6860; transition:all 0.2s;" onmouseover="this.style.borderColor='#1a1a2e';this.style.color='#1a1a1a'" onmouseout="this.style.borderColor='#e0ddd6';this.style.color='#6b6860'">↺ Regenerate</button>
+      <button onclick="copyReply()" style="padding:9px 18px; border:2px solid #c7d2fe; border-radius:8px; background:#eef2ff; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; color:#4338ca; transition:all 0.2s;" onmouseover="this.style.background='#e0e7ff'" onmouseout="this.style.background='#eef2ff'">📋 Copy Reply</button>
+      <button onclick="closeReplyModal()" style="padding:9px 18px; border:none; border-radius:8px; background:#1a1a2e; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; color:#fff; transition:background 0.2s;" onmouseover="this.style.background='#2d2d4e'" onmouseout="this.style.background='#1a1a2e'">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let _currentReplyLeadId = null;
+
+  function openReplyModal(leadId) {
+    _currentReplyLeadId = leadId;
+    const modal = document.getElementById('replyModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    fetchReply(leadId);
+  }
+
+  function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.body.style.overflow = '';
+    _currentReplyLeadId = null;
+  }
+
+  // Close on backdrop click
+  document.getElementById('replyModal').addEventListener('click', function(e) {
+    if (e.target === this) closeReplyModal();
+  });
+
+  async function fetchReply(leadId) {
+    // Show loading, hide content
+    document.getElementById('replyLoading').style.display = 'block';
+    document.getElementById('replyContent').style.display = 'none';
+    document.getElementById('replyActions').style.display = 'none';
+    document.getElementById('modalMeta').textContent = '';
+    document.getElementById('sourceBadge').textContent = '';
+
+    try {
+      const res  = await fetch(`/api/leads/${leadId}/generate-reply`, { method: 'POST' });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || 'Failed to generate reply.', 'fail');
+        closeReplyModal();
+        return;
+      }
+
+      // Populate
+      document.getElementById('replyText').value = data.reply;
+      document.getElementById('modalMeta').textContent =
+        `To: ${data.lead.name} · ${data.lead.email} · ${data.lead.business_type}`;
+
+      const badge = document.getElementById('sourceBadge');
+      if (data.source === 'ai') {
+        badge.textContent = '✨ Generated by Claude AI';
+        badge.style.cssText = 'display:inline-block;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.4px;background:#eef2ff;color:#4338ca;';
+      } else {
+        badge.textContent = '📄 Template reply (set ANTHROPIC_API_KEY for AI)';
+        badge.style.cssText = 'display:inline-block;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.4px;background:#fef3c7;color:#b45309;';
+      }
+
+      document.getElementById('replyLoading').style.display = 'none';
+      document.getElementById('replyContent').style.display = 'block';
+      document.getElementById('replyActions').style.display = 'flex';
+
+    } catch (e) {
+      showToast('Network error while generating reply.', 'fail');
+      closeReplyModal();
+    }
+  }
+
+  function regenerateReply() {
+    if (_currentReplyLeadId) fetchReply(_currentReplyLeadId);
+  }
+
+  async function copyReply() {
+    const text = document.getElementById('replyText').value;
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Reply copied to clipboard!', 'success');
+    } catch (e) {
+      showToast('Copy failed — please select and copy manually.', 'fail');
+    }
+  }
+</script>
+</body>
+</html>

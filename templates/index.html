@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LeadFlow — Submit a Lead</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #f5f4f0;
+      --card:     #ffffff;
+      --accent:   #1a1a2e;
+      --green:    #2d6a4f;
+      --green-lt: #d8f3dc;
+      --red:      #c1121f;
+      --red-lt:   #ffe5e5;
+      --border:   #e0ddd6;
+      --muted:    #6b6860;
+      --text:     #1a1a1a;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 520px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 2rem; }
+    .logo {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.1rem;
+      padding: 6px 18px;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+    .header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .header p {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+
+    /* Form fields */
+    .field { margin-bottom: 1.25rem; }
+    .field label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+    .field label span { color: var(--red); margin-left: 2px; }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      appearance: none;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(26,26,46,0.08);
+    }
+    .field input.error,
+    .field select.error,
+    .field textarea.error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(193,18,31,0.08);
+    }
+    .field textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+    .field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b6860' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+    .error-msg {
+      font-size: 0.78rem;
+      color: var(--red);
+      margin-top: 5px;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    /* Two column row */
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* Submit button */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 0.5rem;
+      letter-spacing: 0.3px;
+    }
+    .btn:hover  { background: #2d2d4e; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 999;
+    }
+    .toast.success { background: var(--green); color: #fff; }
+    .toast.fail    { background: var(--red);   color: #fff; }
+    .toast.show    { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Dashboard link */
+    .footer-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .footer-link a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .footer-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <div class="logo">LeadFlow</div>
+    <h1>Get in Touch</h1>
+    <p>Fill in the form below and we'll get back to you shortly.</p>
+  </div>
+
+  <div class="card">
+    <form id="leadForm" novalidate>
+
+      <div class="field">
+        <label>Full Name <span>*</span></label>
+        <input type="text" id="name" placeholder="e.g. Priya Sharma" />
+        <div class="error-msg" id="err-name">Please enter your full name.</div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label>Email Address <span>*</span></label>
+          <input type="email" id="email" placeholder="you@example.com" />
+          <div class="error-msg" id="err-email">Enter a valid email address.</div>
+        </div>
+        <div class="field">
+          <label>Phone Number <span>*</span></label>
+          <input type="tel" id="phone" placeholder="+91 98765 43210" />
+          <div class="error-msg" id="err-phone">Enter a valid phone number.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Business Type <span>*</span></label>
+        <select id="business_type">
+          <option value="">— Select your business type —</option>
+          <option>SaaS</option>
+          <option>Retail</option>
+          <option>E-commerce</option>
+          <option>Healthcare</option>
+          <option>Education</option>
+          <option>Finance</option>
+          <option>Real Estate</option>
+          <option>Agency</option>
+          <option>Other</option>
+        </select>
+        <div class="error-msg" id="err-business_type">Please select a business type.</div>
+      </div>
+
+      <div class="field">
+        <label>Your Message <span>*</span></label>
+        <textarea id="message" placeholder="Tell us about your enquiry..."></textarea>
+        <div class="error-msg" id="err-message">Please enter your message.</div>
+      </div>
+
+      <button type="submit" class="btn" id="submitBtn">Send Message</button>
+
+    </form>
+  </div>
+
+  <div class="footer-link">
+    Admin? <a href="/dashboard">Go to Dashboard →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const form       = document.getElementById('leadForm');
+  const submitBtn  = document.getElementById('submitBtn');
+
+  // ── Validation rules ──────────────────────────────────
+  const emailRe = /^[\w\.-]+@[\w\.-]+\.\w{2,}$/;
+  const phoneRe = /^[\+\d][\d\s\-\(\)]{7,15}$/;
+
+  function validate() {
+    let ok = true;
+
+    const fields = [
+      { id: 'name',          check: v => v.length > 0 },
+      { id: 'email',         check: v => emailRe.test(v) },
+      { id: 'phone',         check: v => phoneRe.test(v) },
+      { id: 'business_type', check: v => v !== '' },
+      { id: 'message',       check: v => v.length > 0 },
+    ];
+
+    fields.forEach(({ id, check }) => {
+      const el  = document.getElementById(id);
+      const err = document.getElementById('err-' + id);
+      const val = el.value.trim();
+      if (!check(val)) {
+        el.classList.add('error');
+        err.classList.add('visible');
+        ok = false;
+      } else {
+        el.classList.remove('error');
+        err.classList.remove('visible');
+      }
+    });
+
+    return ok;
+  }
+
+  // Clear error on input
+  ['name','email','phone','business_type','message'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => {
+      document.getElementById(id).classList.remove('error');
+      document.getElementById('err-' + id).classList.remove('visible');
+    });
+  });
+
+  // ── Toast helper ──────────────────────────────────────
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ── Form submit ───────────────────────────────────────
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const payload = {
+      name:          document.getElementById('name').value.trim(),
+      email:         document.getElementById('email').value.trim(),
+      phone:         document.getElementById('phone').value.trim(),
+      business_type: document.getElementById('business_type').value,
+      message:       document.getElementById('message').value.trim(),
+    };
+
+    submitBtn.disabled   = true;
+    submitBtn.textContent = 'Sending…';
+
+    try {
+      const res  = await fetch('/api/leads', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast('✓ Message sent! We\'ll be in touch soon.', 'success');
+        form.reset();
+      } else {
+        const msg = data.errors ? data.errors.join(' ') : (data.error || 'Something went wrong.');
+        showToast(msg, 'fail');
+      }
+    } catch (err) {
+      showToast('Network error. Please try again.', 'fail');
+    } finally {
+      submitBtn.disabled    = false;
+      submitBtn.textContent = 'Send Message';
+    }
+  });
+</script>
+</body>
+</html>
