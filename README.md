@@ -1,24 +1,10 @@
-# 🚀 LeadFlow — Lead Management System
+LeadFlow — Lead Management System
 
-A full-stack web application to collect, track, and respond to incoming business leads — with an AI-powered reply generator built using Claude AI.
-
----
-
-## 🌐 Live Demo
-
-> Run locally by following the setup instructions below.
+A full-stack web application to collect, track, and respond to incoming business leads — with an AI-powered reply generator built using AI.
 
 ---
 
-## 📸 Screenshots
-
-| Lead Submission Form | Admin Dashboard | AI Reply Modal |
-|---|---|---|
-| _(add screenshot)_ | _(add screenshot)_ | _(add screenshot)_ |
-
----
-
-## ✨ Features
+Features
 
 - **Lead Submission Form** — Customers submit their name, email, phone, business type, and message
 - **Input Validation** — Both client-side (JavaScript) and server-side (Python) validation
@@ -32,10 +18,10 @@ A full-stack web application to collect, track, and respond to incoming business
 
 ---
 
-## 🛠️ Tech Stack
+Tech Stack
 
 | Layer | Technology |
-|---|---|
+
 | Backend | Python, Flask |
 | Database | SQLite |
 | Frontend | HTML, CSS, Vanilla JavaScript |
@@ -45,9 +31,7 @@ A full-stack web application to collect, track, and respond to incoming business
 
 ---
 
-## 🗄️ Database Schema
-
-**Table: `leads`**
+Database Schema
 
 | Column | Type | Description |
 |---|---|---|
@@ -62,10 +46,10 @@ A full-stack web application to collect, track, and respond to incoming business
 
 ---
 
-## 🔌 API Endpoints
+API Endpoints
 
 | Method | Endpoint | Description |
-|---|---|---|
+
 | `POST` | `/api/leads` | Submit a new lead |
 | `GET` | `/api/leads` | Fetch all leads (with search & filter) |
 | `PATCH` | `/api/leads/<id>/status` | Update lead status |
@@ -74,47 +58,6 @@ A full-stack web application to collect, track, and respond to incoming business
 | `POST` | `/api/leads/<id>/generate-reply` | Generate AI reply for a lead |
 
 ---
-
-## ⚙️ Setup & Installation
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/VVLPriyanka/lead_management_system.git
-cd lead_management_system
-```
-
-### 2. Create and activate a virtual environment
-```bash
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Mac/Linux
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure environment variables
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and fill in your values:
-```
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-EMAIL_USER=you@gmail.com
-EMAIL_PASS=your-app-password
-```
-
-### 5. Run the application
-```bash
-python app.py
-```
 
 Visit:
 - **Lead Form** → http://localhost:5000
@@ -136,18 +79,16 @@ Get your key at: https://console.anthropic.com
 
 ---
 
-## 🔒 Security
+Security
 
 - Parameterised SQL queries to prevent SQL injection
 - Server-side and client-side input validation
 - API keys stored in environment variables — never hardcoded
 - `.env` excluded from version control via `.gitignore`
 
----
 
-## 📁 Project Structure
+Project Structure
 
-```
 lead_management_system/
 ├── app.py                  # Flask backend & API routes
 ├── requirements.txt        # Python dependencies
@@ -156,11 +97,9 @@ lead_management_system/
 └── templates/
     ├── index.html          # Lead submission form
     └── dashboard.html      # Admin dashboard
-```
 
----
 
-## 🙋‍♀️ Author
+Author
 
 **VVL Priyanka**  
 GitHub: [@VVLPriyanka](https://github.com/VVLPriyanka)
