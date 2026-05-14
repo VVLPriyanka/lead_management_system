@@ -87,30 +87,26 @@ def validate_lead(data):
 # EMAIL AUTO-REPLY
 # ─────────────────────────────────────────
 
-def send_auto_reply(lead_name, lead_email, business_type, message_preview):
-    """Send a personalised auto-reply email via Gmail SMTP."""
-    sender_email = os.environ.get("EMAIL_USER")
-    sender_pass  = os.environ.get("EMAIL_PASS")
+def send_auto_reply(lead_name, lead_email, business_type, message):
+    """Send a personalised auto-reply email via Gmail SMTP.
+    Uses the same AI/template reply body as the dashboard AI Reply modal."""
+    sender_email = os.environ.get("GMAIL_USER")
+    sender_pass  = os.environ.get("GMAIL_PASS")
 
     # Gracefully skip if env vars are not configured
     if not sender_email or not sender_pass:
-        print("[Email] Skipped — EMAIL_USER / EMAIL_PASS not set.")
+        print("[Email] Skipped — GMAIL_USER / GMAIL_PASS not set.")
         return
 
+    # Use the same reply logic as the dashboard AI Reply button
+    body, source = generate_ai_reply(lead_name, lead_email, business_type, message)
+    if body is None:
+        body = generate_template_reply(lead_name, business_type, message)
+        source = "template"
+
+    print(f"[Email] Using {source} reply for {lead_email}")
+
     subject = "Thanks for reaching out — LeadFlow"
-    body = f"""Hi {lead_name},
-
-Thank you for getting in touch! We've received your enquiry and will get back to you shortly.
-
-Here's a summary of what you sent us:
-  • Business type : {business_type}
-  • Your message  : {message_preview[:120]}{'...' if len(message_preview) > 120 else ''}
-
-We typically respond within 1–2 business days.
-
-Warm regards,
-The LeadFlow Team
-"""
 
     msg = MIMEMultipart()
     msg["From"]    = sender_email
