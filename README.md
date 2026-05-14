@@ -21,7 +21,7 @@ Features
 Tech Stack
 
 | Layer | Technology |
-
+|---|---|---|
 | Backend | Python, Flask |
 | Database | SQLite |
 | Frontend | HTML, CSS, Vanilla JavaScript |
