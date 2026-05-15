@@ -124,6 +124,8 @@ def send_auto_reply(lead_name, lead_email, business_type, message):
         print(f"[Email] Auto-reply sent to {lead_email}")
     except Exception as e:
         print(f"[Email] Failed to send: {e}")
+        import traceback
+        traceback.print_exc()
 
 def notify_n8n(lead_data):
     webhook_url = os.environ.get("N8N_WEBHOOK_URL")
