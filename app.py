@@ -2,15 +2,12 @@ import os
 import re
 import json
 import sqlite3
-import smtplib
 import requests
 from datetime import datetime
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from flask import Flask, request, jsonify, render_template
 
 from dotenv import load_dotenv
-load_dotenv()  # loads .env into os.environ before anything else
+load_dotenv()
 
 try:
     import anthropic
@@ -27,25 +24,23 @@ DB_PATH = "leads.db"
 # ─────────────────────────────────────────
 
 def get_db():
-    """Open a database connection."""
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # lets us access columns by name
+    conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db():
-    """Create the leads table if it doesn't exist."""
     with get_db() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS leads (
-                id           INTEGER PRIMARY KEY AUTOINCREMENT,
-                name         TEXT    NOT NULL,
-                email        TEXT    NOT NULL,
-                phone        TEXT    NOT NULL,
-                business_type TEXT   NOT NULL,
-                message      TEXT    NOT NULL,
-                status       TEXT    NOT NULL DEFAULT 'New',
-                created_at   TEXT    NOT NULL
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                name          TEXT    NOT NULL,
+                email         TEXT    NOT NULL,
+                phone         TEXT    NOT NULL,
+                business_type TEXT    NOT NULL,
+                message       TEXT    NOT NULL,
+                status        TEXT    NOT NULL DEFAULT 'New',
+                created_at    TEXT    NOT NULL
             )
         """)
         conn.commit()
@@ -61,13 +56,11 @@ def is_valid_email(email):
 
 
 def is_valid_phone(phone):
-    # Allows: +91 9876543210 / 9876543210 / (123) 456-7890 etc.
     pattern = r'^[\+\d][\d\s\-\(\)]{7,15}$'
     return re.match(pattern, phone) is not None
 
 
 def validate_lead(data):
-    """Return a list of error messages, empty if all valid."""
     errors = []
     required_fields = ["name", "email", "phone", "business_type", "message"]
 
@@ -85,47 +78,72 @@ def validate_lead(data):
 
 
 # ─────────────────────────────────────────
-# EMAIL AUTO-REPLY
+# EMAIL — ADMIN NOTIFICATION VIA RESEND
 # ─────────────────────────────────────────
 
-def send_auto_reply(lead_name, lead_email, business_type, message):
-    """Send a personalised auto-reply email via Gmail SMTP.
-    Uses the same AI/template reply body as the dashboard AI Reply modal."""
-    sender_email = os.environ.get("GMAIL_USER")
-    sender_pass  = os.environ.get("GMAIL_PASS")
+def send_admin_notification(lead_name, lead_email, lead_phone, business_type, message):
+    """
+    Send a lead notification email to the admin (YOU) via Resend API.
+    Works on Render — no SMTP port restrictions.
 
-    # Gracefully skip if env vars are not configured
-    if not sender_email or not sender_pass:
-        print("[Email] Skipped — GMAIL_USER / GMAIL_PASS not set.")
+    Required env vars:
+        RESEND_API_KEY   — your Resend API key (re_xxxxxxxxxxxx)
+        ADMIN_EMAIL      — the email that receives notifications (vvlpriyanka@gmail.com)
+    """
+    api_key     = os.environ.get("RESEND_API_KEY")
+    admin_email = os.environ.get("ADMIN_EMAIL", "vvlpriyanka@gmail.com")
+
+    if not api_key:
+        print("[Email] Skipped — RESEND_API_KEY not set.")
         return
 
-    # Use the same reply logic as the dashboard AI Reply button
-    body, source = generate_ai_reply(lead_name, lead_email, business_type, message)
-    if body is None:
-        body = generate_template_reply(lead_name, business_type, message)
-        source = "template"
+    subject = f"🔔 New Lead from {lead_name} — LeadFlow"
 
-    print(f"[Email] Using {source} reply for {lead_email}")
+    body = f"""Hi Priyanka,
 
-    subject = "Thanks for reaching out — LeadFlow"
+You have a new lead submission on LeadFlow!
 
-    msg = MIMEMultipart()
-    msg["From"]    = sender_email
-    msg["To"]      = lead_email
-    msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+─────────────────────────────
+  Name          : {lead_name}
+  Email         : {lead_email}
+  Phone         : {lead_phone}
+  Business Type : {business_type}
+─────────────────────────────
+
+Their Message:
+{message}
+
+─────────────────────────────
+Go to your dashboard to view and respond:
+http://localhost:5000/dashboard
+
+— LeadFlow Notifications
+"""
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(sender_email, sender_pass)
-            server.sendmail(sender_email, lead_email, msg.as_string())
-        print(f"[Email] Auto-reply sent to {lead_email}")
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from":    "LeadFlow <onboarding@resend.dev>",
+                "to":      [admin_email],          # sends to YOU — works without a custom domain
+                "subject": subject,
+                "text":    body,
+            },
+            timeout=10,
+        )
+
+        if response.status_code == 200:
+            print(f"[Email] Admin notification sent to {admin_email}")
+        else:
+            print(f"[Email] Resend error {response.status_code}: {response.text}")
+
     except Exception as e:
-        print(f"[Email] Failed to send: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[Email] Failed to send notification: {e}")
+
 
 def notify_n8n(lead_data):
     webhook_url = os.environ.get("N8N_WEBHOOK_URL")
@@ -145,13 +163,11 @@ def notify_n8n(lead_data):
 
 @app.route("/")
 def index():
-    """Lead submission form."""
     return render_template("index.html")
 
 
 @app.route("/dashboard")
 def dashboard():
-    """Admin dashboard."""
     return render_template("dashboard.html")
 
 
@@ -161,13 +177,11 @@ def dashboard():
 
 @app.route("/api/leads", methods=["POST"])
 def create_lead():
-    """Submit a new lead."""
     data = request.get_json()
 
     if not data:
         return jsonify({"error": "No data received."}), 400
 
-    # Sanitise inputs
     clean = {k: v.strip() if isinstance(v, str) else v for k, v in data.items()}
 
     errors = validate_lead(clean)
@@ -186,28 +200,29 @@ def create_lead():
         conn.commit()
         lead_id = cursor.lastrowid
 
-    # Send auto-reply (non-blocking — errors are logged, not raised)
-    send_auto_reply(clean["name"], clean["email"],
-                    clean["business_type"], clean["message"])
+    # Notify admin (you) — works on Render without a custom domain
+    send_admin_notification(
+        clean["name"], clean["email"], clean["phone"],
+        clean["business_type"], clean["message"]
+    )
 
     notify_n8n({
-        "name": clean["name"],
-        "email": clean["email"],
-        "phone": clean["phone"],
+        "name":          clean["name"],
+        "email":         clean["email"],
+        "phone":         clean["phone"],
         "business_type": clean["business_type"],
-        "message": clean["message"],
-        "created_at": created_at
+        "message":       clean["message"],
+        "created_at":    created_at,
     })
 
     return jsonify({
         "message": "Lead submitted successfully!",
-        "id": lead_id
+        "id":      lead_id
     }), 201
 
 
 @app.route("/api/leads", methods=["GET"])
 def get_leads():
-    """Fetch all leads with optional search and status filter."""
     search = request.args.get("search", "").strip()
     status = request.args.get("status", "").strip()
 
@@ -240,7 +255,6 @@ def get_leads():
 
 @app.route("/api/leads/<int:lead_id>/status", methods=["PATCH"])
 def update_status(lead_id):
-    """Update the status of a lead."""
     data   = request.get_json()
     status = data.get("status", "").strip() if data else ""
 
@@ -262,7 +276,6 @@ def update_status(lead_id):
 
 @app.route("/api/stats", methods=["GET"])
 def get_stats():
-    """Return counts for each status — used by the dashboard stats bar."""
     with get_db() as conn:
         rows = conn.execute(
             "SELECT status, COUNT(*) as count FROM leads GROUP BY status"
@@ -278,7 +291,6 @@ def get_stats():
 
 @app.route("/api/leads/<int:lead_id>", methods=["DELETE"])
 def delete_lead(lead_id):
-    """Delete a lead by ID."""
     with get_db() as conn:
         result = conn.execute("DELETE FROM leads WHERE id = ?", (lead_id,))
         conn.commit()
@@ -287,12 +299,13 @@ def delete_lead(lead_id):
         return jsonify({"error": "Lead not found."}), 404
 
     return jsonify({"message": "Lead deleted.", "id": lead_id}), 200
+
+
 # ─────────────────────────────────────────
 # AI / TEMPLATE REPLY GENERATION
 # ─────────────────────────────────────────
 
 def generate_template_reply(name, business_type, message):
-    """Simple template-based reply (fallback when no API key is set)."""
     msg_lower = message.lower()
 
     if any(w in msg_lower for w in ["price", "cost", "pricing", "quote", "budget"]):
@@ -330,7 +343,6 @@ def generate_template_reply(name, business_type, message):
 
 
 def generate_ai_reply(name, email, business_type, message):
-    """Generate a personalised reply using Claude (claude-sonnet-4-20250514)."""
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key or not _anthropic_available:
         return None, "fallback"
@@ -367,7 +379,6 @@ def generate_ai_reply(name, email, business_type, message):
 
 @app.route("/api/leads/<int:lead_id>/generate-reply", methods=["POST"])
 def generate_reply(lead_id):
-    """Generate an AI (or template) reply draft for a lead."""
     with get_db() as conn:
         row = conn.execute("SELECT * FROM leads WHERE id = ?", (lead_id,)).fetchone()
 
@@ -385,7 +396,7 @@ def generate_reply(lead_id):
 
     return jsonify({
         "reply":  reply,
-        "source": source,   # "ai" | "template"
+        "source": source,
         "lead":   {k: lead[k] for k in ("name", "email", "business_type")}
     }), 200
 
@@ -395,6 +406,6 @@ def generate_reply(lead_id):
 # ─────────────────────────────────────────
 
 if __name__ == "__main__":
-    init_db()   # create DB + table on first run
+    init_db()
     print("LeadFlow running → http://localhost:5000")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
