@@ -116,7 +116,9 @@ def send_auto_reply(lead_name, lead_email, business_type, message):
     msg.attach(MIMEText(body, "plain"))
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.ehlo()
+            server.starttls()
             server.login(sender_email, sender_pass)
             server.sendmail(sender_email, lead_email, msg.as_string())
         print(f"[Email] Auto-reply sent to {lead_email}")
