@@ -3,6 +3,7 @@ import re
 import json
 import sqlite3
 import smtplib
+import requests
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -122,6 +123,17 @@ def send_auto_reply(lead_name, lead_email, business_type, message):
     except Exception as e:
         print(f"[Email] Failed to send: {e}")
 
+def notify_n8n(lead_data):
+    webhook_url = os.environ.get("N8N_WEBHOOK_URL")
+    if not webhook_url:
+        print("[n8n] Skipped — N8N_WEBHOOK_URL not set.")
+        return
+    try:
+        requests.post(webhook_url, json=lead_data, timeout=5)
+        print("[n8n] Lead sent to Google Sheets via n8n")
+    except Exception as e:
+        print(f"[n8n] Failed: {e}")
+
 
 # ─────────────────────────────────────────
 # ROUTES — PAGES
@@ -173,6 +185,15 @@ def create_lead():
     # Send auto-reply (non-blocking — errors are logged, not raised)
     send_auto_reply(clean["name"], clean["email"],
                     clean["business_type"], clean["message"])
+
+    notify_n8n({
+        "name": clean["name"],
+        "email": clean["email"],
+        "phone": clean["phone"],
+        "business_type": clean["business_type"],
+        "message": clean["message"],
+        "created_at": created_at
+    })
 
     return jsonify({
         "message": "Lead submitted successfully!",
